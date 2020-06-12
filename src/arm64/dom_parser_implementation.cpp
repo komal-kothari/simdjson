@@ -2,6 +2,7 @@
 #include "arm64/implementation.h"
 #include "arm64/dom_parser_implementation.h"
 
+#include "arm64/stage1.h"
 //
 // Stage 1
 //
@@ -77,11 +78,21 @@ really_inline simd8<bool> must_be_continuation(simd8<uint8_t> prev1, simd8<uint8
 #include "generic/stage1/json_string_scanner.h"
 #include "generic/stage1/json_scanner.h"
 
+namespace stage1 {
+really_inline uint64_t json_string_scanner::find_escaped(uint64_t backslash) {
+  // On ARM, we don't short-circuit this if there are no backslashes, because the branch gives us no
+  // benefit and therefore makes things worse.
+  // if (!backslash) { uint64_t escaped = prev_escaped; prev_escaped = 0; return escaped; }
+  return find_escaped_branchless(backslash);
+}
+}
+
 #include "generic/stage1/json_minifier.h"
 WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept {
   return arm64::stage1::json_minifier::minify<64>(buf, len, dst, dst_len);
 }
 
+#include "arm64/stage1.h"
 #include "generic/stage1/find_next_document_index.h"
 #include "generic/stage1/utf8_lookup2_algorithm.h"
 #include "generic/stage1/json_structural_indexer.h"
